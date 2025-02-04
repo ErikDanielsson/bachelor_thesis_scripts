@@ -77,7 +77,7 @@ process compile_hostrep_treeppl {
     
     script:
     """
-    tpplc $baseDir/treeppl/host_repertoire.tppl --output hostrep.bin
+    tpplc $baseDir/scripts/host_repertoire.tppl --output hostrep.bin
     chmod +x hostrep.bin
     """
 }
