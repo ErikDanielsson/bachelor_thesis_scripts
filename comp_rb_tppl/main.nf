@@ -2,107 +2,25 @@
 Nextflow pipeline for performance copa
 """
 
+include {
+    generate_trees_and_interactions;
+    rev_annotate_tree;
+    generate_phyjson;
+    clean_phyjson
+} from "./modules/gendata"
 
-process generate_trees_and_interactions {
-    publishDir "gen_data"
+include {
+    run_hostrep_revbayes
+} from "./modules/revbayes"
 
-    input:
-        val simid
-
-    output:
-        path "parasite_tree.${simid}.tre"
-        path "host_tree.${simid}.tre"
-        path "interactions.${simid}.csv"
-        path "interactions.${simid}.nex"
-
-    script:
-    """
-    Rscript $baseDir/scripts/generate_data.R ${simid}
-    """
-}
-
-process rev_annotate_tree {
-    publishDir "gen_data"
-
-    input:
-        val simid
-        path input
-
-    output:
-        path "${input.getBaseName()}" + ".rev.tre"
-
-    script:
-    """
-    rb $baseDir/scripts/annotate_tree.Rev --args ${input} --args ${input.baseName}.rev.tre
-    """
-}
-
-process generate_phyjson {
-    input:
-        val simid
-        path symbiont_tree_file
-        path host_tree_file
-        path interactions_csv_file
-
-    output:
-        path "dirty_host_parasite${simid}.json"
-    
-    script:
-    """
-    Rscript $baseDir/scripts/transform_data_to_phyjson.R ${symbiont_tree_file} ${host_tree_file} ${interactions_csv_file} "dirty_host_parasite${simid}.json"
-    """
-}
-
-process clean_phyjson {
-    publishDir "gen_data"
-
-    input:
-        val simid
-        path dirty_phyjson
-
-    output:
-        path "host_parasite${simid}.json"
-
-    script:
-    """
-    python $baseDir/scripts/clean_phyjson.py ${dirty_phyjson} "host_parasite${simid}.json"
-    """
-}
-
-process compile_hostrep_treeppl {
-    publishDir "gen_bin"
-
-    output:
-        path "hostrep.bin"
-    
-    script:
-    """
-    tpplc $baseDir/scripts/host_repertoire.tppl --output hostrep.bin
-    chmod +x hostrep.bin
-    """
-}
-
-process run_hostrep_treeppl {
-    publishDir "output"
-
-    input:
-        val simid
-        path hostrep_bin
-        path phyjson_file
-        val niter
-    
-    output:
-        path "output${simid}.json" 
-    
-    script:
-    """
-    ./${hostrep_bin} ${phyjson_file} ${niter} > "output${simid}.json"
-    """
-}
+include {
+    compile_hostrep_treeppl;
+    run_hostrep_treeppl
+} from "./modules/treeppl"
 
 workflow {
     // Define the simulations
-    simid = Channel.of((1..1))
+    simid = Channel.of((1..3))
 
     // Generate data from a coalescent model
     generate_trees_and_interactions(simid)
@@ -134,5 +52,13 @@ workflow {
         compile_hostrep_treeppl.out,
         clean_phyjson.out,
         10
+    )
+
+    // Run the revbayes implementation
+    run_hostrep_revbayes(
+        simid,
+        generate_trees_and_interactions.out[0],
+        generate_trees_and_interactions.out[1],
+        generate_trees_and_interactions.out[3]
     )
 }
