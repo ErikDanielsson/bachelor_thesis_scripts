@@ -2,10 +2,12 @@
 
 # Read the infiles and the output dir as command line args
 simid = args[1]
-phy_plant_fn = args[2]
-phy_insect_fn = args[3]
-dat_insect_fn = args[4]
-out_fp = args[5] + "/"
+niter = args[2]
+freq_subsample = args[3]
+phy_plant_fn = args[4]
+phy_insect_fn = args[5]
+dat_insect_fn = args[6]
+out_fp = args[7] + "/"
 
 seed(simid)
 
@@ -26,9 +28,9 @@ dat_insect <- readDiscreteCharacterData(dat_insect_fn)
 
 mni = 1
 mvi = 1
-n_gen = 1e5
+n_gen = int(niter)
 n_burn = 0 
-sample_freq = 50 
+sample_freq = int(freq_subsample) 
 tune_freq = n_burn/10
 
 n_plant_tips <- phy_plant.ntips()
