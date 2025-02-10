@@ -14,7 +14,7 @@ process run_hostrep_revbayes {
    
     script:
     """
-    rb $baseDir/scripts/Infer_test.Rev \
+    Infer_test.Rev \
         --args $runid \
         --args $niter \
         --args $freq_subsample \
@@ -43,7 +43,7 @@ process time_hostrep_revbayes {
    
     script:
     """
-    { time rb $baseDir/scripts/Infer_test.Rev \
+    { time Infer_test.Rev \
         --args $runid \
         --args $niter \
         --args $freq_subsample \

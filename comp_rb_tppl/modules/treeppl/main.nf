@@ -6,7 +6,7 @@ process compile_hostrep_treeppl {
     
     script:
     """
-    tpplc $baseDir/scripts/host_repertoire.tppl \
+    tpplc $baseDir/models/host_repertoire.tppl \
         -m mcmc-lw-dk \
         --align \
         --cps none \

@@ -14,7 +14,7 @@ process generate_trees_and_interactions {
 
     script:
     """
-    Rscript $baseDir/scripts/generate_data.R ${genid} ${nsymbiont} ${nhost}
+    generate_data.R ${genid} ${nsymbiont} ${nhost}
     """
 }
 
@@ -30,7 +30,7 @@ process rev_annotate_tree {
 
     script:
     """
-    rb $baseDir/scripts/annotate_tree.Rev --args ${input} --args ${input.baseName}.rev.tre
+    annotate_tree.Rev --args ${input} --args ${input.baseName}.rev.tre
     """
 }
 
@@ -46,7 +46,7 @@ process generate_phyjson {
     
     script:
     """
-    Rscript $baseDir/scripts/transform_data_to_phyjson.R ${symbiont_tree_file} ${host_tree_file} ${interactions_csv_file} dirty_host_parasite.${genid}.json
+    transform_data_to_phyjson.R ${symbiont_tree_file} ${host_tree_file} ${interactions_csv_file} dirty_host_parasite.${genid}.json
     """
 }
 
@@ -62,6 +62,6 @@ process clean_phyjson {
 
     script:
     """
-    python $baseDir/scripts/clean_phyjson.py ${dirty_phyjson} "host_parasite.${genid}.json"
+    clean_phyjson.py ${dirty_phyjson} "host_parasite.${genid}.json"
     """
 }
