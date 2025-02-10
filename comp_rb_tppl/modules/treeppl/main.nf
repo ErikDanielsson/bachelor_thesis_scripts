@@ -1,8 +1,11 @@
 process compile_hostrep_treeppl {
     publishDir "gen_bin"
 
+    input:
+        val runid
+
     output:
-        path "hostrep.bin", emit: hostrep_bin
+        tuple val(runid), path("hostrep.${runid}.bin"), emit: hostrep_bin
     
     script:
     """
@@ -13,8 +16,9 @@ process compile_hostrep_treeppl {
         --kernel \
         --drift 0.1\
         --mcmc-lw-gprob 0.0 \
-        --output hostrep.bin
-    chmod +x hostrep.bin
+        --output hostrep.${runid}.bin \
+        --seed ${runid}
+    chmod +x hostrep.${runid}.bin
     """
 }
 
@@ -22,9 +26,8 @@ process run_hostrep_treeppl {
     publishDir "output"
 
     input:
-        tuple val(runid), val(genid), path(phyjson_file) 
+        tuple val(runid), path(hostrep_bin), val(genid), path(phyjson_file) 
         val niter
-        path hostrep_bin
     
     output:
         tuple val(runid), path("output.${genid}.${runid}.json"), emit: output_json
@@ -39,9 +42,8 @@ process time_hostrep_treeppl {
     publishDir "output"
 
     input:
-        tuple val(runid), val(genid), path(phyjson_file) 
+        tuple val(runid), path(hostrep_bin), val(genid), path(phyjson_file) 
         val niter
-        path hostrep_bin
 
     output:
         tuple val(runid), path("time.treeppl.${genid}.${runid}.txt"), emit: time

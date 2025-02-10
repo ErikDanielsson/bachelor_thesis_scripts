@@ -11,6 +11,6 @@ process generate_trace_plots {
     
     script:
     """
-    python $baseDir/scripts/trace_plots.py ${revbayes_out.join(' ')} ${treeppl_out.join(' ')}
+    trace_plots.py ${revbayes_out.join(' ')} ${treeppl_out.join(' ')}
     """
 }

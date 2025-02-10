@@ -5,11 +5,13 @@ the RevBayes and TreePPL implementation of the host repertoire model
 nextflow.enable.dsl=2
 
 params.time = false
-params.nsims = 3
+params.ngens = 3
+params.nruns = 3
 params.niter = 1e3
 params.subsample = 1
 params.nhosts = 3
 params.nsymbionts = 3
+
 
 include {
     generate_trees_and_interactions;
@@ -35,8 +37,8 @@ include {
 
 workflow {
     // Define the simulations
-    genid = Channel.of((1..1)) 
-    runid = Channel.of((1..10))
+    genid = Channel.of((1..params.ngens)) 
+    runid = Channel.of((1..params.nruns))
     nhosts = params.nhosts
     nsymbionts = params.nsymbionts
 
@@ -70,17 +72,17 @@ workflow {
 
 
     // Compile the host repertoire model to an executable
-    compile_hostrep_treeppl()
+    compile_hostrep_treeppl(runid)
     def treeppl_out_ch
     def revbayes_out_ch
-
+    
     rev_bayes_in_ch = runid.combine(
         generate_trees_and_interactions.out.symbiont_tree
         .join(generate_trees_and_interactions.out.host_tree)
         .join(generate_trees_and_interactions.out.interactions_nex)
     )
 
-    treeppl_in_ch = runid.combine(
+    treeppl_in_ch = compile_hostrep_treeppl.out.hostrep_bin.combine(
         clean_phyjson.out.phyjson
     )
 
@@ -90,7 +92,6 @@ workflow {
         treeppl_out_ch = time_hostrep_treeppl(
             treeppl_in_ch,
             niter,
-            compile_hostrep_treeppl.out.hostrep_bin.first(),
         )
 
         // Time the revbayes implementation
@@ -104,7 +105,6 @@ workflow {
         treeppl_out_ch = run_hostrep_treeppl(
             treeppl_in_ch,
             niter,
-            compile_hostrep_treeppl.out.hostrep_bin.first(),
         ) 
 
         // Run the revbayes implementation
@@ -115,8 +115,4 @@ workflow {
         )
     }
 
-    generate_trace_plots(
-        revbayes_out_ch.clock_log.map {runid, log -> log}.collect(),
-        treeppl_out_ch.output_json.map {runid, out -> out}.collect()
-    ) 
 }
