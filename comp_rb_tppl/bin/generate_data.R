@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 #### Small simulated dataset to compare TreePPL and RevBayes ####
 
 library(tidyverse)

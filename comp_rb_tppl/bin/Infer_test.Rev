@@ -1,4 +1,4 @@
-#!/usr/bin/rb
+#!/usr/bin/env rb
 
 # Read the infiles and the output dir as command line args
 

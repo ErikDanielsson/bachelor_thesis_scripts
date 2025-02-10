@@ -1,4 +1,4 @@
-#!/usr/bin/rb
+#!/usr/bin/env rb
 print(args)
 input_tree_fn = args[1]
 output_tree_fn = args[2]
