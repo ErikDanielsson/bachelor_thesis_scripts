@@ -57,7 +57,7 @@ def main():
 
     fig, axs = plt.subplots(2, nsims)
     for i, (rev_out_file, tppl_sample) in enumerate(zip(rev_out_files, tppl_samples)):
-        mu_sample = [s["lambda"] for s in tppl_sample]
+        mu_sample = [s["mu"] for s in tppl_sample]
         axs[0, i].plot(rev_out_file["Iteration"], rev_out_file["clock_host"])
         axs[1, i].plot(range(len(mu_sample)), mu_sample)
     plt.savefig("trace_plot.png")

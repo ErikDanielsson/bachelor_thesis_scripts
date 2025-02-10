@@ -35,8 +35,8 @@ include {
 
 workflow {
     // Define the simulations
-    genid = 1 
-    simid = Channel.of((1..3))
+    genid = Channel.of((1..1)) 
+    runid = Channel.of((1..10))
     nhosts = params.nhosts
     nsymbionts = params.nsymbionts
 
@@ -49,7 +49,6 @@ workflow {
         nsymbionts,
         nhosts,
     )
-    
 
     // Pass the symbiont tree through revbayes to give it node labels
     rev_annotate_tree(
@@ -69,52 +68,55 @@ workflow {
         generate_phyjson.out.dirty_phyjson.map {genid, tree -> tree}
     )
 
-    clean_phyjson.out.collect().view()
 
     // Compile the host repertoire model to an executable
     compile_hostrep_treeppl()
     def treeppl_out_ch
     def revbayes_out_ch
 
+    rev_bayes_in_ch = runid.combine(
+        generate_trees_and_interactions.out.symbiont_tree
+        .join(generate_trees_and_interactions.out.host_tree)
+        .join(generate_trees_and_interactions.out.interactions_nex)
+    )
+
+    treeppl_in_ch = runid.combine(
+        clean_phyjson.out.phyjson
+    )
+
     // Execute the correct type of simulation for the model
     if ( params.time ) {
+        // Time the treeppl implementation
         treeppl_out_ch = time_hostrep_treeppl(
-            simid,
-            niter,
-            compile_hostrep_treeppl.out,
-            clean_phyjson.out,
-        )
-
-        // Run the revbayes implementation
-        revbayes_out_ch = time_hostrep_revbayes(
-            simid,
-            niter,
-            generate_trees_and_interactions.out.symbiont_tree,
-            generate_trees_and_interactions.out.host_tree,
-            generate_trees_and_interactions.out.interactions_nex
-        )
-    } else {
-        treeppl_out_ch = run_hostrep_treeppl(
-            simid,
+            treeppl_in_ch,
             niter,
             compile_hostrep_treeppl.out.hostrep_bin.first(),
-            clean_phyjson.out.phyjson.first()
-        ) 
-        run_hostrep_treeppl.out.output_json.view()
-        // Run the revbayes implementation
-        revbayes_out_ch = run_hostrep_revbayes(
-            simid,
+        )
+
+        // Time the revbayes implementation
+        revbayes_out_ch = time_hostrep_revbayes(
+            rev_bayes_in_ch,
             niter,
             freq_subsample,
-            generate_trees_and_interactions.out.symbiont_tree.first(),
-            generate_trees_and_interactions.out.host_tree.first(),
-            generate_trees_and_interactions.out.interactions_nex.first()
         )
-        run_hostrep_revbayes.out.clock_log.view()
+    } else {
+        // Run the treeppl implementation
+        treeppl_out_ch = run_hostrep_treeppl(
+            treeppl_in_ch,
+            niter,
+            compile_hostrep_treeppl.out.hostrep_bin.first(),
+        ) 
+
+        // Run the revbayes implementation
+        revbayes_out_ch = run_hostrep_revbayes(
+            rev_bayes_in_ch,
+            niter,
+            freq_subsample,
+        )
     }
 
     generate_trace_plots(
-        run_hostrep_revbayes.out.clock_log.map {simid, log -> log}.collect(),
-        run_hostrep_treeppl.out.output_json.map {simid, out -> out}.collect()
+        revbayes_out_ch.clock_log.map {runid, log -> log}.collect(),
+        treeppl_out_ch.output_json.map {runid, out -> out}.collect()
     ) 
 }

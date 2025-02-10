@@ -42,11 +42,11 @@ process generate_phyjson {
         path interactions_csv_file
 
     output:
-        tuple val(genid), path("dirty_host_parasite${genid}.json"), emit: dirty_phyjson
+        tuple val(genid), path("dirty_host_parasite.${genid}.json"), emit: dirty_phyjson
     
     script:
     """
-    Rscript $baseDir/scripts/transform_data_to_phyjson.R ${symbiont_tree_file} ${host_tree_file} ${interactions_csv_file} "dirty_host_parasite${genid}.json"
+    Rscript $baseDir/scripts/transform_data_to_phyjson.R ${symbiont_tree_file} ${host_tree_file} ${interactions_csv_file} dirty_host_parasite.${genid}.json
     """
 }
 
@@ -58,10 +58,10 @@ process clean_phyjson {
         path dirty_phyjson
 
     output:
-        tuple val(genid), path("host_parasite${genid}.json"), emit: phyjson
+        tuple val(genid), path("host_parasite.${genid}.json"), emit: phyjson
 
     script:
     """
-    python $baseDir/scripts/clean_phyjson.py ${dirty_phyjson} "host_parasite${genid}.json"
+    python $baseDir/scripts/clean_phyjson.py ${dirty_phyjson} "host_parasite.${genid}.json"
     """
 }

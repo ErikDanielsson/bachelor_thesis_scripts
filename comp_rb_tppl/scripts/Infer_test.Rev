@@ -1,6 +1,7 @@
 #!/usr/bin/rb
 
 # Read the infiles and the output dir as command line args
+
 simid = args[1]
 niter = args[2]
 freq_subsample = args[3]
@@ -8,11 +9,12 @@ phy_plant_fn = args[4]
 phy_insect_fn = args[5]
 dat_insect_fn = args[6]
 out_fp = args[7] + "/"
+out_prefix = args[8]
 
 seed(simid)
 
 # Define the output files
-out_fn_prefix = out_fp + "out." + simid 
+out_fn_prefix = out_fp + out_prefix
 clock_mn_fn = out_fn_prefix + ".logger.log"
 print(clock_mn_fn)
 model_mn_fn = out_fn_prefix + ".log"

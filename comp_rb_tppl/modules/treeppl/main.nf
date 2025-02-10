@@ -22,17 +22,16 @@ process run_hostrep_treeppl {
     publishDir "output"
 
     input:
-        val simid
+        tuple val(runid), val(genid), path(phyjson_file) 
         val niter
         path hostrep_bin
-        tuple val(genid), path(phyjson_file) 
     
     output:
-        tuple val(simid), path("output.${simid}.json"), emit: output_json
+        tuple val(runid), path("output.${genid}.${runid}.json"), emit: output_json
     
     script:
     """
-    ./${hostrep_bin} ${phyjson_file} ${niter} > output.${simid}.json
+    ./${hostrep_bin} ${phyjson_file} ${niter} > output.${genid}.${runid}.json
     """
 }
 
@@ -40,22 +39,21 @@ process time_hostrep_treeppl {
     publishDir "output"
 
     input:
-        val simid
+        tuple val(runid), val(genid), path(phyjson_file) 
         val niter
         path hostrep_bin
-        path phyjson_file
-    
+
     output:
-        tuple val(simid), path("time.treeppl.${simid}.txt"), emit: time
-        tuple val(simid), path("output.${simid}.json"), emit: output_json
+        tuple val(runid), path("time.treeppl.${genid}.${runid}.txt"), emit: time
+        tuple val(runid), path("output.${genid}.${runid}.json"), emit: output_json
     
     script:
     """
     { time \
         ./${hostrep_bin} ${phyjson_file} ${niter} \
-        1> output.${simid}.json \
+        1> output.${genid}.${runid}.json \
         2> /dev/null; \
-    } 2> "time.treeppl.${simid}.txt"
+    } 2> "time.treeppl.${genid}.${runid}.txt"
     """
 }
 
@@ -63,21 +61,21 @@ process perf_hostrep_treeppl {
     publishDir "output"
 
     input:
-        val simid
+        val runid
         val niter
         path hostrep_bin
         path phyjson_file
     
     output:
-        path "time.treeppl.${simid}.txt"
-        path "output.${simid}.json" 
+        path "time.treeppl.${runid}.txt"
+        path "output.${runid}.json" 
     
     script:
     """
     { perf \
         ./${hostrep_bin} ${phyjson_file} ${niter} \
-        1> output.${simid}.json \
+        1> output.${runid}.json \
         2> /dev/null; \
-    } 2> "time.treeppl.${simid}.txt"
+    } 2> "time.treeppl.${runid}.txt"
     """
 }
