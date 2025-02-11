@@ -31,32 +31,63 @@ import matplotlib.pyplot as plt
 output_dir = CWD / "output"
 
 tppl_fns, rb_fns = proc_output.get_outfiles(output_dir)
-
-
 ```
 
 Trace plots for the RevBayes implementation in @fig-trace-rb
 ```{python}
-# | label: fig-trace-rb
-# | fig-cap: "A "
 
 
 # Create a chain for each run
-rb_all_dataset = proc_output.create_multi_chain_dataset(
-    rb_fns, proc_output.read_rb_file, 0
+rb_all_dataset = proc_output.create_inference_data(
+    rb_fns, proc_output.read_rb_file, 10000, 50
 )
-
-az.plot_trace(rb_all_dataset)
-plt.show()
-
+tppl_all_dataset = proc_output.create_inference_data(
+    tppl_fns, proc_output.read_tppl_file, 10000, 50
+)
 ```
+```{python}
+# | label: fig-trace-rb
+# | fig-cap: "A "
+
+rb_compiled = proc_output.create_multi_chain_dataset(rb_all_dataset, type="all")
+az.plot_trace(rb_compiled, compact=False)
+plt.show()
+```
+```{python}
+# | label: fig-trace-tppl
+# | fig-cap: "A "
+
+tppl_compiled = proc_output.create_multi_chain_dataset(tppl_all_dataset, type="all")
+az.plot_trace(tppl_compiled, compact=False)
+plt.show()
+```
+
+```{python}
+# ESS calculation
+import json
+
+rb_ess_df = proc_output.calc_ess_all(rb_all_dataset)
+tppl_ess_df = proc_output.calc_ess_all(tppl_all_dataset)
+"""
+fig, axs = proc_output.ess_bar_plot(rb_ess_df, c="g", label="RB", width=0.3)
+fig, axs = proc_output.ess_bar_plot(
+    tppl_ess_df, fig=fig, axs=axs, c="r", label="TPPL", width=0.3, mv=0.3
+)
+plt.show()
+"""
+
+# Some stuff
+```
+
 Trace plots for the TreePPL implementation in @fig-trace-rb
 ```{python}
+"""
 tppl_all_dataset = proc_output.create_multi_chain_dataset(
-    tppl_fns, proc_output.read_tppl_file, 0
+    tppl_fns, proc_output.read_tppl_file, 10000
 )
 
-az.plot_trace(tppl_all_dataset)
+az.plot_trace(tppl_all_dataset[3], compact=False, legend=True)
 plt.show()
+"""
 
 ```
