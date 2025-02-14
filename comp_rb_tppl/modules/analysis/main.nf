@@ -1,5 +1,7 @@
+params.analysis_dir = "analysis"
+
 process generate_trace_plots {
-    publishDir "plots"
+    publishDir "analysis"
 
     input:
         path revbayes_out 

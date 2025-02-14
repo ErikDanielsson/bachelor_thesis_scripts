@@ -1,5 +1,7 @@
+params.outdir = "output"
+
 process run_hostrep_revbayes {
-    publishDir "output"
+    publishDir "${params.outdir}"
 
     input:
         tuple val(runid), val(genid), path(symbiont_tree_file), path(host_tree_file), path(interactions_nex_file)
@@ -27,7 +29,7 @@ process run_hostrep_revbayes {
 }
 
 process time_hostrep_revbayes {
-    publishDir "output"
+    publishDir "${params.outdir}"
 
     input:
         tuple val(runid), val(genid), path(symbiont_tree_file), path(host_tree_file), path(interactions_nex_file)

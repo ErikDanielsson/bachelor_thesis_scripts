@@ -1,11 +1,15 @@
+params.outdir = "test_output"
+params.bindir = "test_gen_bin"
+
 process compile_hostrep_treeppl {
-    publishDir "gen_bin"
+
+    publishDir "${params.bindir}"
 
     input:
-        val runid
+        tuple val(compile_id), val(runid), val(drift_scale), val(gprob)
 
     output:
-        tuple val(runid), path("hostrep.${runid}.bin"), emit: hostrep_bin
+        tuple val(compile_id), path("hostrep.${compile_id}.bin"), emit: hostrep_bin
     
     script:
     """
@@ -14,32 +18,44 @@ process compile_hostrep_treeppl {
         --align \
         --cps none \
         --kernel \
-        --drift 0.1\
-        --mcmc-lw-gprob 0.0 \
-        --output hostrep.${runid}.bin \
+        --drift ${drift_scale}\
+        --mcmc-lw-gprob ${gprob} \
+        --output hostrep.${compile_id}.bin \
         --seed ${runid}
-    chmod +x hostrep.${runid}.bin
+    chmod +x hostrep.${compile_id}.bin
     """
 }
 
 process run_hostrep_treeppl {
-    publishDir "output"
+    /*
+    The treeppl implementation is light in memory use for most of the
+    execution but uses a lot of memory at the end of the execution (upwards of
+    10Gb). This is a hacky way of trying many runs at first, and then settling
+    for fewer if they collide to much
+    */
+    memory { 1.GB * Math.pow(2, task.attempt - 1) }
+    maxRetries 5 
+
+    publishDir "${params.outdir}"
 
     input:
-        tuple val(runid), path(hostrep_bin), val(genid), path(phyjson_file) 
+        tuple val(compile_id), path(hostrep_bin), val(genid), path(phyjson_file) 
         val niter
     
     output:
-        tuple val(runid), path("output.${genid}.${runid}.json"), emit: output_json
+        tuple val(genid), val(compile_id), path("output.${genid}.${compile_id}.json"), emit: output_json
     
     script:
     """
-    ./${hostrep_bin} ${phyjson_file} ${niter} > output.${genid}.${runid}.json
+    ./${hostrep_bin} ${phyjson_file} ${niter} > output.${genid}.${compile_id}.json
     """
 }
 
 process time_hostrep_treeppl {
-    publishDir "output"
+    memory { 1.GB * Math.pow(2, task.attempt - 1) }
+    maxRetries 5 
+
+    publishDir "${params.outdir}"
 
     input:
         tuple val(runid), path(hostrep_bin), val(genid), path(phyjson_file) 
@@ -60,7 +76,7 @@ process time_hostrep_treeppl {
 }
 
 process perf_hostrep_treeppl {
-    publishDir "output"
+    publishDir "${params.outdir}"
 
     input:
         val runid

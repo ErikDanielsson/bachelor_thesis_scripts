@@ -37,6 +37,7 @@ Trace plots for the RevBayes implementation in @fig-trace-rb
 ```{python}
 
 
+
 # Create a chain for each run
 rb_all_dataset = proc_output.create_inference_data(
     rb_fns, proc_output.read_rb_file, 10000, 50

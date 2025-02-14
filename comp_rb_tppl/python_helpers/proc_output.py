@@ -23,25 +23,53 @@ def get_temp_file(fn):
     return get_temp_dir() / (Path(fn).stem + ".csv")
 
 
+def get_tppl_output_pattern():
+    return re.compile(r"output\.(\d+)\.(\d+)\.json")
+
+
+def get_rb_output_pattern():
+    return re.compile(r"out\.(\d+)\.(\d+)\.log$")
+
+
 def get_files_in_dir(dir: Path, patterns: dict[str, re.Pattern]):
     fns = {k: {} for k in patterns}
+    ll = []
     for file in dir.iterdir():
         fn = file.name
         for k, pattern in patterns.items():
             m = pattern.match(fn)
             if m is not None:
-                genid, runid = m.groups(1)
-                genid, runid = int(genid), int(runid)
+                genid, compile_id = m.groups(1)
+                genid, compile_id = int(genid), int(compile_id)
                 if genid not in fns[k]:
                     fns[k][genid] = {}
-                fns[k][genid][runid] = file
-    return fns
+                ll.append((k, genid, compile_id, file))
+                fns[k][genid][compile_id] = file
+    header = ["file_type", "genid", "compile_id", "filename"]
+    df = pd.DataFrame(ll, columns=header)
+    return df, fns
+
+
+def parse_compile_params(
+    fn,
+    header=["compile_id", "runid", "drift_scale", "gprob"],
+    dtypes=[int, int, float, float],
+):
+    df = pd.read_csv(
+        fn, names=header, sep="\t", dtype={h: d for h, d in zip(header, dtypes)}
+    )
+    return df
+
+
+def add_compile_params(file_df, compile_param_fn):
+    compile_params_df = parse_compile_params(compile_param_fn)
+    return file_df.merge(compile_params_df, on="compile_id", how="left")
 
 
 def get_outfiles(outdir: Path):
     # Define the regexes for the two types of filenames
-    tppl_pattern = re.compile(r"output\.(\d+)\.(\d+)\.json")
-    rb_pattern = re.compile(r"out\.(\d+)\.(\d+)\.log$")
+    tppl_pattern = get_tppl_output_pattern()
+    rb_pattern = get_rb_output_pattern()
 
     tppl_fns = {}
     rb_fns = {}
@@ -163,6 +191,31 @@ def create_inference_data(files, read_func, burnin, subsample=1):
         for genid, runs in files.items()
     }
     return datasets
+
+
+def create_inference_data_df(file_df, read_func, burnin, subsample=1):
+    file_df["inference_data"] = [
+        inference_data_from_dataframe(
+            read_func(row["filename"]),
+            chain=hash((row["genid"], row["compile_id"])),
+            burnin=burnin,
+            subsample=subsample,
+        )
+        for _, row in file_df.iterrows()
+    ]
+    return file_df
+
+
+def create_multi_chain_dataset_df(
+    inference_datas, save_cols, data_col="inference_data"
+):
+    def reduce_col(inference_col):
+        concat = lambda x, y: az.concat(x, y, dim="chain")
+        return reduce(concat, inference_col)
+
+    return inference_datas.groupby(save_cols).agg(
+        multi_channel=pd.NamedAgg(column=data_col, aggfunc=reduce_col)
+    )
 
 
 def create_multi_chain_dataset(inference_datas, type="genid"):

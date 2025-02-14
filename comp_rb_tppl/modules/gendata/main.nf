@@ -1,5 +1,7 @@
+params.datadir = "test_gen_data"
+
 process generate_trees_and_interactions {
-    publishDir "gen_data"
+    publishDir "${params.datadir}"
 
     input:
         val genid
@@ -19,7 +21,7 @@ process generate_trees_and_interactions {
 }
 
 process rev_annotate_tree {
-    publishDir "gen_data"
+    publishDir "${params.datadir}"
 
     input:
         val(genid)
@@ -51,7 +53,7 @@ process generate_phyjson {
 }
 
 process clean_phyjson {
-    publishDir "gen_data"
+    publishDir "${params.datadir}"
 
     input:
         val genid
