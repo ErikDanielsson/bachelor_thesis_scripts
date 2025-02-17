@@ -1,13 +1,13 @@
 nextflow.enable.dsl=2
 
-params.simdir = file("driftscale_param_sim")
+params.simdir = file("drift_scale_param_sim")
 params.outdir = params.simdir / "output"
 params.datadir = params.simdir / "datadir"
 params.bindir = params.simdir / "bindir"
 params.time = false
 params.ngens = 2
 params.nruns = 3
-params.niter = 1e4
+params.niter = 2500
 params.subsample = 1
 params.nhosts = 3
 params.nsymbionts = 3
@@ -30,7 +30,7 @@ workflow {
     // Define the simulations
     genid = Channel.of((1..params.ngens)) 
     runid = Channel.of((1..params.nruns))
-    drift_scale = Channel.of(1.0, 0.1, 0.01)
+    drift_scale = Channel.of(10, 1.0, 0.1, 0.01)
     gprob = Channel.of(0.0)
 
     nhosts = params.nhosts

@@ -18,6 +18,14 @@ process generate_trees_and_interactions {
     """
     generate_data.R ${genid} ${nsymbiont} ${nhost}
     """
+
+    stub: 
+    """
+    touch symbiont_tree.${genid}.tre
+    touch host_tree.${genid}.tre
+    touch interactions.${genid}.csv
+    touch interactions.${genid}.nex
+    """
 }
 
 process rev_annotate_tree {
@@ -33,6 +41,11 @@ process rev_annotate_tree {
     script:
     """
     annotate_tree.Rev --args ${input} --args ${input.baseName}.rev.tre
+    """
+
+    stub:
+    """
+    touch ${input.getBaseName()}.rev.tre
     """
 }
 
@@ -50,6 +63,11 @@ process generate_phyjson {
     """
     transform_data_to_phyjson.R ${symbiont_tree_file} ${host_tree_file} ${interactions_csv_file} dirty_host_parasite.${genid}.json
     """
+
+    stub:
+    """
+    touch dirty_host_parasite.${genid}.json
+    """
 }
 
 process clean_phyjson {
@@ -65,5 +83,10 @@ process clean_phyjson {
     script:
     """
     clean_phyjson.py ${dirty_phyjson} "host_parasite.${genid}.json"
+    """
+
+    stub: 
+    """
+    touch host_parasite.${genid}.json
     """
 }

@@ -24,6 +24,12 @@ process compile_hostrep_treeppl {
         --seed ${runid}
     chmod +x hostrep.${compile_id}.bin
     """
+
+    stub:
+    """
+    touch hostrep.${compile_id}.bin
+    chmod +x hostrep.${compile_id}.bin
+    """
 }
 
 process run_hostrep_treeppl {
@@ -33,8 +39,9 @@ process run_hostrep_treeppl {
     10Gb). This is a hacky way of trying many runs at first, and then settling
     for fewer if they collide to much
     */
-    memory { 1.GB * Math.pow(2, task.attempt - 1) }
+    memory { 1.5.GB * Math.pow(2, task.attempt - 1) }
     maxRetries 5 
+    errorStrategy { task.exitStatus == 137 ? 'retry' : 'terminate' }
 
     publishDir "${params.outdir}"
 
@@ -49,10 +56,15 @@ process run_hostrep_treeppl {
     """
     ./${hostrep_bin} ${phyjson_file} ${niter} > output.${genid}.${compile_id}.json
     """
+
+    stub:
+    """
+    touch output.${genid}.${compile_id}.json
+    """
 }
 
 process time_hostrep_treeppl {
-    memory { 1.GB * Math.pow(2, task.attempt - 1) }
+    memory { 2.GB * Math.pow(2, task.attempt - 1) }
     maxRetries 5 
 
     publishDir "${params.outdir}"
@@ -73,6 +85,8 @@ process time_hostrep_treeppl {
         2> /dev/null; \
     } 2> "time.treeppl.${genid}.${runid}.txt"
     """
+
+
 }
 
 process perf_hostrep_treeppl {
