@@ -1,6 +1,6 @@
 nextflow.enable.dsl=2
 
-params.simdir = file("drift_scale_param_sim")
+params.simdir = file("pipeline_outputs")
 params.outdir = params.simdir / "output"
 params.datadir = params.simdir / "datadir"
 params.bindir = params.simdir / "bindir"

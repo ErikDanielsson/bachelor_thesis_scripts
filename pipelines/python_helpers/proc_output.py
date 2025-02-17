@@ -66,6 +66,21 @@ def add_compile_params(file_df, compile_param_fn):
     return file_df.merge(compile_params_df, on="compile_id", how="left")
 
 
+def get_missing_params(file_df, compile_param_fn):
+    compile_params_df = parse_compile_params(compile_param_fn)
+    found_compile_id = file_df[["genid", "compile_id"]]
+    compile_ids = set(compile_params_df["compile_id"])
+    missing_compile_ids = {}
+    for genid, group in found_compile_id.groupby("genid"):
+        existing_compile_ids = set(group["compile_id"])
+        missing_compile_ids[genid] = compile_ids - existing_compile_ids
+    missing_df = pd.DataFrame(
+        [(gen, cid) for gen, cids in missing_compile_ids.items() for cid in cids],
+        columns=["genid", "compile_id"],
+    )
+    return missing_df.merge(compile_params_df, on="compile_id", how="left")
+
+
 def get_outfiles(outdir: Path):
     # Define the regexes for the two types of filenames
     tppl_pattern = get_tppl_output_pattern()
@@ -321,3 +336,19 @@ def proc_time_txt(fn, type="user"):
     time_dict = time_df.to_dict()["time"]
     time_dict = {type: parse_time_str(time_str) for type, time_str in time_dict.items()}
     return time_dict[type]
+
+
+def interaction_matrix_pattern():
+    return re.compile(r"interactions\.(\d+)\.csv$")
+
+
+def get_interaction_matrices(data_dir):
+    pattern = interaction_matrix_pattern()
+    fns = {}
+    for file in data_dir.iterdir():
+        fn = file.name
+        m = pattern.match(fn)
+        if m is not None:
+            (genid,) = m.groups(1)
+            fns[genid] = fn
+    return fns
