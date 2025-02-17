@@ -18,22 +18,22 @@ include {
     rev_annotate_tree;
     generate_phyjson;
     clean_phyjson
-} from "./modules/gendata"
+} from "../modules/gendata"
 
 include {
     run_hostrep_revbayes;
     time_hostrep_revbayes
-} from "./modules/revbayes"
+} from "../modules/revbayes"
 
 include {
     compile_hostrep_treeppl;
     run_hostrep_treeppl;
     time_hostrep_treeppl
-} from "./modules/treeppl"
+} from "../modules/treeppl"
 
 include {
     generate_trace_plots
-} from "./modules/analysis"
+} from "../modules/analysis"
 
 workflow {
     // Define the simulations

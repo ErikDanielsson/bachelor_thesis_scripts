@@ -18,13 +18,13 @@ include {
     rev_annotate_tree;
     generate_phyjson;
     clean_phyjson
-} from "./modules/gendata"
+} from "../modules/gendata"
 
 include {
     compile_hostrep_treeppl;
     run_hostrep_treeppl;
     time_hostrep_treeppl
-} from "./modules/treeppl"
+} from "../modules/treeppl"
 
 workflow {
     // Define the simulations
