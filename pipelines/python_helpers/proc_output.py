@@ -31,7 +31,11 @@ def get_rb_output_pattern():
     return re.compile(r"out\.(\d+)\.(\d+)\.log$")
 
 
-def get_files_in_dir(dir: Path, patterns: dict[str, re.Pattern]):
+def get_files_in_dir(
+    dir: Path,
+    patterns: dict[str, re.Pattern],
+    header=["file_type", "genid", "compile_id", "filename"],
+):
     fns = {k: {} for k in patterns}
     ll = []
     for file in dir.iterdir():
@@ -39,13 +43,13 @@ def get_files_in_dir(dir: Path, patterns: dict[str, re.Pattern]):
         for k, pattern in patterns.items():
             m = pattern.match(fn)
             if m is not None:
+                file_ids = map(int, m.groups())
                 genid, compile_id = m.groups(1)
                 genid, compile_id = int(genid), int(compile_id)
                 if genid not in fns[k]:
                     fns[k][genid] = {}
-                ll.append((k, genid, compile_id, file))
+                ll.append((k, *file_ids, file))
                 fns[k][genid][compile_id] = file
-    header = ["file_type", "genid", "compile_id", "filename"]
     df = pd.DataFrame(ll, columns=header)
     return df, fns
 
@@ -79,39 +83,6 @@ def get_missing_params(file_df, compile_param_fn):
         columns=["genid", "compile_id"],
     )
     return missing_df.merge(compile_params_df, on="compile_id", how="left")
-
-
-def get_outfiles(outdir: Path):
-    # Define the regexes for the two types of filenames
-    tppl_pattern = get_tppl_output_pattern()
-    rb_pattern = get_rb_output_pattern()
-
-    tppl_fns = {}
-    rb_fns = {}
-    for file in outdir.iterdir():
-        fn = file.name
-
-        # Check if the treeppl outfile name matches
-        tppl_match = tppl_pattern.match(fn)
-        if tppl_match is not None:
-            genid, runid = tppl_match.groups(1)
-            genid, runid = int(genid), int(runid)
-            # Parse the outfile
-            if genid not in tppl_fns:
-                tppl_fns[genid] = {}
-            tppl_fns[genid][runid] = file
-            continue
-
-        # Check if the revbayes outfile name matches
-        rb_match = rb_pattern.match(fn)
-        if rb_match is not None:
-            genid, runid = rb_match.groups(1)
-            genid, runid = int(genid), int(runid)
-            if genid not in rb_fns:
-                rb_fns[genid] = {}
-            rb_fns[genid][runid] = file
-
-    return tppl_fns, rb_fns
 
 
 def read_rb_file(fn, rename=True, with_file=True):
@@ -208,10 +179,10 @@ def create_inference_data(files, read_func, burnin, subsample=1):
     return datasets
 
 
-def create_inference_data_df(file_df, read_func, burnin, subsample=1):
+def create_inference_data_df(file_df, read_funcs, burnin, subsample=1):
     file_df["inference_data"] = [
         inference_data_from_dataframe(
-            read_func(row["filename"]),
+            read_funcs[row["file_type"]](row["filename"]),
             chain=hash((row["genid"], row["compile_id"])),
             burnin=burnin,
             subsample=subsample,

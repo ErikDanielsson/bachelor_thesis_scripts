@@ -1,6 +1,12 @@
 # Nextflow
 .nextflow*
-comp_rb_tppl/work/*
+**/work/*
+#
+# Report tmp files
+**/qmd_temp/
+**/*_files/
+**/*.html
+**/*.quarto_ipynb
 
 # Python
 # Byte-compiled / optimized / DLL files
@@ -177,3 +183,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+

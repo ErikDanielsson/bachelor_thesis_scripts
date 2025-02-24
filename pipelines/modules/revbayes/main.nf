@@ -26,6 +26,14 @@ process run_hostrep_revbayes {
         --args \$PWD \
         --args out.${genid}.${runid}
     """
+
+    stub:
+    """
+    touch out.${genid}.${runid}.logger.log
+    touch out.${genid}.${runid}.log
+    touch out.${genid}.${runid}.history.txt
+    touch out.${genid}.${runid}.tre
+    """
 }
 
 process time_hostrep_revbayes {
