@@ -1,9 +1,7 @@
-params.outdir = "test_output"
-params.bindir = "test_gen_bin"
-
 process compile_hostrep_treeppl {
+    label 'compile'
 
-    publishDir "${params.bindir}"
+    // publishDir "${params.bindir}"
 
     input:
         tuple val(compile_id), val(runid), val(drift_scale), val(gprob)
@@ -32,7 +30,44 @@ process compile_hostrep_treeppl {
     """
 }
 
+process compile_model {
+    label 'compile'
+
+    // This accepts the compile id,
+    // the seed to the algorithm
+    // a key for what model to select,
+    // and flags specfifying the inference algorithm
+    input:
+        tuple val(compile_id), val(runid), val(model_key), val(inference_flags)
+
+    output:
+        tuple val(compile_id), path("${model_key}.${compile_id}.bin"), emit: hostrep_bin
+    
+    script:
+    def model_fns = [original: "host_repertoire.tppl", rejection: "host_rep_rejection.tppl"]
+    def model_fn = model_fns[model_key]
+    def out_fn = "${model_key}.${compile_id}.bin"
+    """
+    tpplc $baseDir/models/${model_fn} \
+        --output ${out_fn} \
+        --seed ${runid} \
+        ${inference_flags}
+    chmod +x ${out_fn}
+    """
+
+    stub:
+    def model_fns = [original: "host_repertoire.tppl", rejection: "host_rep_rejection.tppl"]
+    def model_fn = model_fns[model_key]
+    def out_fn = "${model_key}.${compile_id}.bin"
+    """
+    cat $baseDir/models/${model_fn}
+    echo ${inference_flags} > ${out_fn}
+    chmod +x ${out_fn}
+    """
+}
+
 process run_hostrep_treeppl {
+    label 'sim'
     /*
     The treeppl implementation is light in memory use for most of the
     execution but uses a lot of memory at the end of the execution (upwards of
@@ -43,7 +78,7 @@ process run_hostrep_treeppl {
     maxRetries 5 
     errorStrategy { task.exitStatus == 137 ? 'retry' : 'terminate' }
 
-    publishDir "${params.outdir}"
+    // publishDir "${params.outdir}"
 
     input:
         tuple val(compile_id), path(hostrep_bin), val(genid), path(phyjson_file) 
@@ -64,10 +99,11 @@ process run_hostrep_treeppl {
 }
 
 process time_hostrep_treeppl {
+    label 'sim'
     memory { 2.GB * Math.pow(2, task.attempt - 1) }
     maxRetries 5 
 
-    publishDir "${params.outdir}"
+    // publishDir "${params.outdir}"
 
     input:
         tuple val(runid), path(hostrep_bin), val(genid), path(phyjson_file) 

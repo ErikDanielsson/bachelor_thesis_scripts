@@ -1,7 +1,7 @@
 params.datadir = "test_gen_data"
 
 process generate_trees_and_interactions {
-    publishDir "${params.datadir}"
+    label 'data'
 
     input:
         val genid
@@ -29,7 +29,7 @@ process generate_trees_and_interactions {
 }
 
 process rev_annotate_tree {
-    publishDir "${params.datadir}"
+    label 'data'
 
     input:
         val(genid)
@@ -50,6 +50,8 @@ process rev_annotate_tree {
 }
 
 process generate_phyjson {
+    label 'data'
+
     input:
         val genid
         path symbiont_tree_file 
@@ -71,7 +73,7 @@ process generate_phyjson {
 }
 
 process clean_phyjson {
-    publishDir "${params.datadir}"
+    label 'data'
 
     input:
         val genid
