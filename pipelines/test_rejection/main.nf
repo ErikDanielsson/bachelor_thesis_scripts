@@ -13,6 +13,10 @@ include {
     time_hostrep_treeppl
 } from "../modules/treeppl"
 
+include {
+    run_hostrep_revbayes
+} from "../modules/revbayes"
+
 workflow {
     // Define the simulations
     def genid = Channel.of((1..params.ngens)) 
@@ -99,7 +103,7 @@ workflow {
         name: "compile_id_to_configuration.csv",
         storeDir: file(params.bindir),
         newLine: true
-    ) {cid, rid, mn, flags -> "$cid\t$rid\t$mn\t\t${flags}"}
+    ) {cid, rid, mn, flags -> "$cid\t$rid\t$mn\t${flags}"}
 
     // Create all binaries we require
     compile_model(compile_in_ch)
@@ -115,4 +119,16 @@ workflow {
         treeppl_in_ch,
         niter,
     ) 
+
+    rev_bayes_in_ch = runid.combine(
+        generate_trees_and_interactions.out.symbiont_tree
+        .join(generate_trees_and_interactions.out.host_tree)
+        .join(generate_trees_and_interactions.out.interactions_nex)
+    )
+
+    revbayes_out_ch = run_hostrep_revbayes(
+        rev_bayes_in_ch,
+        niter,
+        freq_subsample,
+    )
 }

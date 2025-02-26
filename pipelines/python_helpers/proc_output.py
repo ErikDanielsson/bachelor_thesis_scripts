@@ -6,21 +6,38 @@ import matplotlib.pyplot as plt
 import json
 import re
 import os
+import shlex
+import shutil
+import logging
 from functools import reduce
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 pd.options.mode.chained_assignment = None
 
 
-def get_temp_dir():
-    temp_dir = Path(os.getcwd()) / "qmd_temp"
+def get_temp_dir(tempdir_suffix=""):
+    tempdir_prefix = "qmd_temp"
+    tempdir_dirname = tempdir_prefix + "_" + tempdir_suffix
+    temp_dir = Path(os.getcwd()) / tempdir_dirname
     if not temp_dir.exists():
         temp_dir.mkdir()
     return temp_dir
 
 
-def get_temp_file(fn):
-    return get_temp_dir() / (Path(fn).stem + ".csv")
+def clear_temp_dir(tempdir_prefix="qmd_temp", tempdir_suffix=""):
+    tempdir_dirname = tempdir_prefix + "_" + tempdir_suffix
+    tempdir_path = Path(os.getcwd()) / tempdir_dirname
+    if tempdir_path.exists():
+        logger.info(f"Clearing cache at {tempdir_path}")
+        shutil.rmtree(tempdir_path)
+        return True
+    return False
+
+
+def get_temp_file(fn, tempdir_suffix=""):
+    return get_temp_dir(tempdir_suffix=tempdir_suffix) / (Path(fn).stem + ".csv")
 
 
 def get_tppl_output_pattern():
@@ -38,7 +55,7 @@ def get_files_in_dir(
 ):
     fns = {k: {} for k in patterns}
     ll = []
-    for file in dir.iterdir():
+    for file in dir.glob("**/*"):
         fn = file.name
         for k, pattern in patterns.items():
             m = pattern.match(fn)
@@ -56,17 +73,50 @@ def get_files_in_dir(
 
 def parse_compile_params(
     fn,
-    header=["compile_id", "runid", "drift_scale", "gprob"],
-    dtypes=[int, int, float, float],
+    header=["compile_id", "runid", "model", "flags"],
+    dtypes=[int, int, str, str],
+    parse_flags=True,
 ):
     df = pd.read_csv(
-        fn, names=header, sep="\t", dtype={h: d for h, d in zip(header, dtypes)}
+        fn,
+        names=header,
+        sep="\t",
+        index_col=False,
+        dtype={h: d for h, d in zip(header, dtypes)},
     )
+    if parse_flags:
+        flag_df = parse_sim_flags(df)
+        return pd.concat([df, flag_df], axis=1).drop(columns=["flags"])
     return df
 
 
-def add_compile_params(file_df, compile_param_fn):
-    compile_params_df = parse_compile_params(compile_param_fn)
+def parse_sim_flags(df, flag_col="flags"):
+    return df[flag_col].apply(parse_cmd_line_flag).apply(pd.Series)
+
+
+def parse_cmd_line_flag(flag):
+    flag_pattern = re.compile(r"--?([\w-]+)")  # Matches the flags
+    split_flag = shlex.split(flag)
+    flag_idx = [flag_pattern.match(arg_part) for arg_part in split_flag]
+    args = {}
+    i = 0
+    while i < len(split_flag):
+        if flag_idx[i]:
+            flag_name = flag_idx[i].group(1)
+            i += 1
+            if i < len(split_flag) and not flag_idx[i]:
+                args[flag_name] = split_flag[i]
+                i += 1
+            else:
+                args[flag_name] = True
+        else:
+            print(split_flag[i])
+            i += 1
+    return args
+    # The flag should always have zero or one arguments!
+
+
+def add_compile_params(file_df, compile_params_df):
     return file_df.merge(compile_params_df, on="compile_id", how="left")
 
 
@@ -85,9 +135,9 @@ def get_missing_params(file_df, compile_param_fn):
     return missing_df.merge(compile_params_df, on="compile_id", how="left")
 
 
-def read_rb_file(fn, rename=True, with_file=True):
+def read_rb_file(fn, rename=True, with_file=True, tempdir_suffix=""):
     if with_file:
-        temp_fn = get_temp_file(fn)
+        temp_fn = get_temp_file(fn, tempdir_suffix=tempdir_suffix)
         if temp_fn.exists():
             return pd.read_csv(temp_fn, index_col=0)
     samples = pd.read_csv(fn, sep="\t")
@@ -118,9 +168,9 @@ def read_rb_file(fn, rename=True, with_file=True):
     return samples
 
 
-def read_tppl_file(fn, with_file=True):
+def read_tppl_file(fn, with_file=True, tempdir_suffix=""):
     if with_file:
-        temp_fn = get_temp_dir() / (Path(fn).stem + ".csv")
+        temp_fn = get_temp_file(fn, tempdir_suffix=tempdir_suffix)
         if temp_fn.exists():
             return pd.read_csv(temp_fn, index_col=0)
     with open(fn) as fh:

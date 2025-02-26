@@ -3,7 +3,7 @@
 **/work/*
 #
 # Report tmp files
-**/qmd_temp/
+**/qmd_temp*/
 **/*_files/
 **/*.html
 **/*.quarto_ipynb

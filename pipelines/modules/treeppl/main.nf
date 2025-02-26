@@ -1,8 +1,6 @@
 process compile_hostrep_treeppl {
     label 'compile'
 
-    // publishDir "${params.bindir}"
-
     input:
         tuple val(compile_id), val(runid), val(drift_scale), val(gprob)
 
@@ -44,7 +42,13 @@ process compile_model {
         tuple val(compile_id), path("${model_key}.${compile_id}.bin"), emit: hostrep_bin
     
     script:
-    def model_fns = [original: "host_repertoire.tppl", rejection: "host_rep_rejection.tppl"]
+    def model_fns = [
+        original: "host_repertoire.tppl",
+        rejection_simple: "host_rep_rejection_simple.tppl",          // Does not adjust correct repertoire along branches
+        rejection_full: "host_rep_rejection_full.tppl",              // TODO: Adjusts for repertoire along branches
+        uniformizaton_simple: "host_rep_uniformization_simple.tppl", // TODO: Uniformization along branches, no adjustment for false repertoires
+        uniformizaton_full: "host_rep_uniformization_full.tppl",     // TODO: Uniformization along branches, adjusts for repertoire along branches
+    ]
     def model_fn = model_fns[model_key]
     def out_fn = "${model_key}.${compile_id}.bin"
     """
@@ -56,7 +60,13 @@ process compile_model {
     """
 
     stub:
-    def model_fns = [original: "host_repertoire.tppl", rejection: "host_rep_rejection.tppl"]
+    def model_fns = [
+        original: "host_repertoire.tppl",
+        rejection_simple: "host_rep_rejection_simple.tppl",          // Does not adjust correct repertoire along branches
+        rejection_full: "host_rep_rejection_full.tppl",              // TODO: Adjusts for repertoire along branches
+        uniformizaton_simple: "host_rep_uniformization_simple.tppl", // TODO: Uniformization along branches, no adjustment for false repertoires
+        uniformizaton_full: "host_rep_uniformization_full.tppl",     // TODO: Uniformization along branches, adjusts for repertoire along branches
+    ]
     def model_fn = model_fns[model_key]
     def out_fn = "${model_key}.${compile_id}.bin"
     """
@@ -77,8 +87,6 @@ process run_hostrep_treeppl {
     memory { 1.5.GB * Math.pow(2, task.attempt - 1) }
     maxRetries 5 
     errorStrategy { task.exitStatus == 137 ? 'retry' : 'terminate' }
-
-    // publishDir "${params.outdir}"
 
     input:
         tuple val(compile_id), path(hostrep_bin), val(genid), path(phyjson_file) 

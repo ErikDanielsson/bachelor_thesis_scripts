@@ -13,6 +13,7 @@ jupyter: phylogenetics
 
 import sys
 import os
+import shutil
 from pathlib import Path
 
 CWD = Path(os.getcwd())
@@ -31,24 +32,55 @@ import pandas as pd
 # -- it complains that all samples are the same
 warnings.filterwarnings(action="ignore", module=r"arviz")
 
-pipeline_result_dir = Path("pipeline_outputs")
-datadir = pipeline_result_dir / "datadir"
-output_dir = pipeline_result_dir / "output"
-param_comb_path = output_dir / "compile_id_to_param_comb.csv"
+cache = True  # If true, the script will cache the files in a temporary directory after reading them
+clear_cache = (
+    False  # If true, the script will clear the files from the temporary directory
+)
+run_name = "test_25000_samples"
+if not cache or clear_cache:
+    proc_output.clear_temp_dir(tempdir_suffix=run_name)
+outdir = CWD / run_name  # Set output directory here!
+datadir = outdir / "data"
+simdir = outdir / "sims"
+bindir = outdir / "bins"
+param_comb_path = bindir / "compile_id_to_configuration.csv"
 ```
 ```{python}
-# Set output dirs
-
-
 # Read files
 df, tppl_fns = proc_output.get_files_in_dir(
-    output_dir, {"tppl": proc_output.get_tppl_output_pattern()}
+    simdir,
+    {
+        "tppl": proc_output.get_tppl_output_pattern(),
+        "rb": proc_output.get_rb_output_pattern(),
+    },
 )
 
 df = proc_output.create_inference_data_df(
-    df, {"tppl": proc_output.read_tppl_file}, 0, 1
+    df,
+    {
+        "tppl": lambda fn: proc_output.read_tppl_file(
+            fn, with_file=cache, tempdir_suffix=run_name
+        ),
+        "rb": lambda fn: proc_output.read_rb_file(
+            fn, with_file=cache, tempdir_suffix=run_name
+        ),
+    },
+    0,
+    1,
 )
+dfs = {k: v for k, v in df.groupby("file_type")}
+df_tppl = dfs["tppl"]
 
+has_rb = False
+if "rb" in dfs:
+    df_rb = dfs["rb"]
+    has_rb = True
+```
+### TreePPL compile params
+The following TreePPL models were run
+```{python}
+compile_params = proc_output.parse_compile_params(param_comb_path)
+print(compile_params)
 ```
 ### Missing simulations
 The following simulations failed to finish (too great RAM requirement)
@@ -59,23 +91,37 @@ print(missing_df)
 
 ```{python}
 
-df_with_compile_params = proc_output.add_compile_params(df, param_comb_path)
-
-reduced_df = proc_output.create_multi_chain_dataset_df(
-    df_with_compile_params, ["drift_scale"]
+df_tppl_with_compile_params = proc_output.add_compile_params(df_tppl, compile_params)
+reduced_df_tppl = proc_output.create_multi_chain_dataset_df(
+    df_tppl_with_compile_params, ["drift"]
 )
-
+if has_rb:
+    reduced_df_rb = proc_output.create_multi_chain_dataset_df(
+        df_rb,
+        ["file_type"],
+    )
 ```
-### Trace plot drift=1
+### RevBayes trace plot
 ```{python}
-# | label: fig-trace-1
+# | label: fig-trace-rb-1
 # | fig-cap: "2500 samples from the TPPL implementation with drift param 1"
-az.plot_trace(reduced_df.loc[1, "multi_channel"], compact=False)
+if has_rb:
+    az.plot_trace(reduced_df_rb.loc["rb", "multi_channel"], compact=False)
+    plt.show()
+else:
+    print("No RevBayes files found")
+```
+### TreePPL trace plot drift=1
+```{python}
+# | label: fig-trace-tppl-1
+# | fig-cap: "2500 samples from the TPPL implementation with drift param 1"
+az.plot_trace(reduced_df_tppl.loc["1.0", "multi_channel"], compact=False)
 plt.show()
 ```
+### TreePPL trace plot drift=0.1
 ```{python}
-# | label: fig-trace-2
+# | label: fig-trace-tppl-2
 # | fig-cap: "2500 samples from the TPPL implementation with drift param 1"
-az.plot_trace(reduced_df.loc[0.1, "multi_channel"], compact=False)
+az.plot_trace(reduced_df_tppl.loc["0.1", "multi_channel"], compact=False)
 plt.show()
 ```

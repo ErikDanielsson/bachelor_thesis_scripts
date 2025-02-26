@@ -1,5 +1,3 @@
-params.outdir = "output"
-
 process run_hostrep_revbayes {
     label 'sim'
 
