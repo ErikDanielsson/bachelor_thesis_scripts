@@ -1,5 +1,5 @@
 ---
-title: "Drift scale param test"
+title: "TreePPL host repertoire"
 format:
   html:
     code-fold: true
@@ -32,14 +32,17 @@ import pandas as pd
 # -- it complains that all samples are the same
 warnings.filterwarnings(action="ignore", module=r"arviz")
 
-cache = True  # If true, the script will cache the files in a temporary directory after reading them
-clear_cache = (
-    False  # If true, the script will clear the files from the temporary directory
-)
-run_name = "test_25000_samples"
-if not cache or clear_cache:
-    proc_output.clear_temp_dir(tempdir_suffix=run_name)
-outdir = CWD / run_name  # Set output directory here!
+# Set global script options, the rest will follow from these
+RUN_NAME = "test_25000_samples"
+CACHE = True  # Create a cache of the files to speed up next render?
+CLEAR_CACHE = False  # Clear the cache from a previous render?
+
+# Check if we should clear the cache
+if not CACHE or CLEAR_CACHE:
+    proc_output.clear_temp_dir(tempdir_suffix=RUN_NAME)
+
+# Set the names of the output directories
+outdir = CWD / RUN_NAME
 datadir = outdir / "data"
 simdir = outdir / "sims"
 bindir = outdir / "bins"
@@ -59,10 +62,10 @@ df = proc_output.create_inference_data_df(
     df,
     {
         "tppl": lambda fn: proc_output.read_tppl_file(
-            fn, with_file=cache, tempdir_suffix=run_name
+            fn, with_file=CACHE, tempdir_suffix=RUN_NAME
         ),
         "rb": lambda fn: proc_output.read_rb_file(
-            fn, with_file=cache, tempdir_suffix=run_name
+            fn, with_file=CACHE, tempdir_suffix=RUN_NAME
         ),
     },
     0,
@@ -86,7 +89,10 @@ print(compile_params)
 The following simulations failed to finish (too great RAM requirement)
 ```{python}
 missing_df = proc_output.get_missing_params(df, param_comb_path)
-print(missing_df)
+if not missing_df.empty:
+    print(missing_df)
+else:
+    print("All runs finished!")
 ```
 
 ```{python}
@@ -102,6 +108,7 @@ if has_rb:
     )
 ```
 ### RevBayes trace plot
+This is a reference run with the model implemented in RevBayes
 ```{python}
 # | label: fig-trace-rb-1
 # | fig-cap: "2500 samples from the TPPL implementation with drift param 1"

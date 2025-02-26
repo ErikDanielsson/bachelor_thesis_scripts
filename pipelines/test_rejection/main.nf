@@ -70,7 +70,7 @@ workflow {
             inference_flags = drift_scale.combine(gprob)
                 .map {ds, gp -> "${inf_str} --drift ${ds} --mcmc-lw-gprob ${gp}"}
 
-        } else if (params.inference_algorithm in ["smc-apf", "smc-bpf"]) {
+        } else if (params.inference_algorithm in ["smc-apf", "smc-bpf", "mcmc-naive"]) {
 
             // For these algorithms we don't have additional flags to specify
             inf_str = "-m ${params.inference_algorithm}"
@@ -120,15 +120,17 @@ workflow {
         niter,
     ) 
 
-    rev_bayes_in_ch = runid.combine(
-        generate_trees_and_interactions.out.symbiont_tree
-        .join(generate_trees_and_interactions.out.host_tree)
-        .join(generate_trees_and_interactions.out.interactions_nex)
-    )
+    if (params.run_revbayes) {
+        rev_bayes_in_ch = runid.combine(
+            generate_trees_and_interactions.out.symbiont_tree
+            .join(generate_trees_and_interactions.out.host_tree)
+            .join(generate_trees_and_interactions.out.interactions_nex)
+        )
 
-    revbayes_out_ch = run_hostrep_revbayes(
-        rev_bayes_in_ch,
-        niter,
-        freq_subsample,
-    )
+        revbayes_out_ch = run_hostrep_revbayes(
+            rev_bayes_in_ch,
+            niter,
+            freq_subsample,
+        )
+    }
 }
