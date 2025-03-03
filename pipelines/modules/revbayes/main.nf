@@ -1,6 +1,8 @@
 process run_hostrep_revbayes {
     label 'sim'
 
+    container "sswiston/phylo_docker:slim_amd64"
+
     input:
         tuple val(runid), val(genid), path(symbiont_tree_file), path(host_tree_file), path(interactions_nex_file)
         val niter

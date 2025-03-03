@@ -53,72 +53,74 @@ workflow {
         genid,
         generate_phyjson.out.dirty_phyjson.map {gid, tree -> tree}
     )
+    if (params.run_treeppl) {
 
-    def model_flag_combs
-    if (!params.models) {
-        // Create all the combinations of compiler flags we desire
-        // and give each a unique id
-        // If we want to run several models we can specify their keys as --treeppl_model_name <model_key1>,<model_key2> etc.
-        def model_names = Channel.fromList(params.treeppl_model_name.tokenize(','))
-        def inference_flags
-        if (params.inference_algorithm == "mcmc-lw-dk") {
+        def model_flag_combs
+        if (!params.models) {
+            // Create all the combinations of compiler flags we desire
+            // and give each a unique id
+            // If we want to run several models we can specify their keys as --treeppl_model_name <model_key1>,<model_key2> etc.
+            def model_names = Channel.fromList(params.treeppl_model_name.tokenize(','))
+            def inference_flags
+            if (params.inference_algorithm == "mcmc-lw-dk") {
 
-            inf_str = "-m mcmc-lw-dk --align --cps none --kernel"
-            // Create all combinations of drift we want
-            def drift_scale = Channel.of(1.0, 0.1)
-            def gprob = Channel.of(0.0)
-            inference_flags = drift_scale.combine(gprob)
-                .map {ds, gp -> "${inf_str} --drift ${ds} --mcmc-lw-gprob ${gp}"}
+                inf_str = "-m mcmc-lw-dk --align --cps none --kernel"
+                // Create all combinations of drift we want
+                def drift_scale = Channel.of(1.0, 0.1)
+                def gprob = Channel.of(0.0)
+                inference_flags = drift_scale.combine(gprob)
+                    .map {ds, gp -> "${inf_str} --drift ${ds} --mcmc-lw-gprob ${gp}"}
 
-        } else if (params.inference_algorithm in ["smc-apf", "smc-bpf", "mcmc-naive"]) {
+            } else if (params.inference_algorithm in ["smc-apf", "smc-bpf", "mcmc-naive"]) {
 
-            // For these algorithms we don't have additional flags to specify
-            inf_str = "-m ${params.inference_algorithm}"
-            inference_flags = Channel.of(inf_str).first()
+                // For these algorithms we don't have additional flags to specify
+                inf_str = "-m ${params.inference_algorithm}"
+                inference_flags = Channel.of(inf_str).first()
+
+            } else {
+
+                // Use SMC-BPF as default
+                inf_str = "-m smc-bpf"
+                inference_flags = Channel.of(inf_str).first()
+
+            }
+
+            // Create a channel model and flag combinations
+            model_flag_combinations = model_names.combine(inference_flags)
 
         } else {
-
-            // Use SMC-BPF as default
-            inf_str = "-m smc-bpf"
-            inference_flags = Channel.of(inf_str).first()
-
+            // We have a model specification file, use that instead
+            model_flag_combinations = Channel.fromPath(params.models)
+                | splitCsv(sep:"\t", header:["model_name", "inference_flags"])
+                | map {row -> [row.model_name, row.inference_flags]}
         }
+        // Add the rest of the parameters, and the compile id
+        compile_id = 0
+        compile_in_ch = runid.combine(model_flag_combinations)
+            .map {rid, mn, flags -> [compile_id++, rid, mn, flags]}
 
-        // Create a channel model and flag combinations
-        model_flag_combinations = model_names.combine(inference_flags)
+        // Save the compile configuration corresponding to each compile id to a file
+        compile_in_ch.collectFile(
+            name: "compile_id_to_configuration.csv",
+            storeDir: file(params.bindir),
+            newLine: true
+        ) {cid, rid, mn, flags -> "$cid\t$rid\t$mn\t${flags}"}
 
-    } else {
-        // We have a model specification file, use that instead
-        model_flag_combinations = Channel.fromPath(params.models)
-            | splitCsv(sep:"\t", header:["model_name", "inference_flags"])
-            | map {row -> [row.model_name, row.inference_flags]}
+        // Create all binaries we require
+        compile_model(compile_in_ch)
+
+        // Create the in file channel
+        // -- all combinations of compiler flags and data generations
+        treeppl_in_ch = compile_model.out.hostrep_bin.combine(
+            clean_phyjson.out.phyjson
+        )
+
+        // Run the treeppl implementation
+        treeppl_out_ch = run_hostrep_treeppl(
+            treeppl_in_ch,
+            niter,
+        ) 
     }
-    // Add the rest of the parameters, and the compile id
-    compile_id = 0
-    compile_in_ch = runid.combine(model_flag_combinations)
-        .map {rid, mn, flags -> [compile_id++, rid, mn, flags]}
-
-    // Save the compile configuration corresponding to each compile id to a file
-    compile_in_ch.collectFile(
-        name: "compile_id_to_configuration.csv",
-        storeDir: file(params.bindir),
-        newLine: true
-    ) {cid, rid, mn, flags -> "$cid\t$rid\t$mn\t${flags}"}
-
-    // Create all binaries we require
-    compile_model(compile_in_ch)
-
-    // Create the in file channel
-    // -- all combinations of compiler flags and data generations
-    treeppl_in_ch = compile_model.out.hostrep_bin.combine(
-        clean_phyjson.out.phyjson
-    )
-
-    // Run the treeppl implementation
-    treeppl_out_ch = run_hostrep_treeppl(
-        treeppl_in_ch,
-        niter,
-    ) 
 
     if (params.run_revbayes) {
         rev_bayes_in_ch = runid.combine(

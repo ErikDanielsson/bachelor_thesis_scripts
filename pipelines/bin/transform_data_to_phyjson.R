@@ -2,7 +2,6 @@
 
 library(tidyverse)
 library(ape)
-library(ggtree)
 library(evolnets)
 library(treepplr)
 library(jsonlite)

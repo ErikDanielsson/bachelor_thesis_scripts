@@ -2,12 +2,7 @@
 
 #### Small simulated dataset to compare TreePPL and RevBayes ####
 
-library(tidyverse)
 library(ape)
-library(ggtree)
-library(evolnets)
-library(treepplr)
-library(Matrix)
 
 # Parse command line args
 args <- commandArgs(trailingOnly = TRUE)

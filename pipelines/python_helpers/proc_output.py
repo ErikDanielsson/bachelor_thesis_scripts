@@ -18,9 +18,12 @@ pd.options.mode.chained_assignment = None
 
 
 def get_temp_dir(tempdir_suffix=""):
+    base_tmp_dir = Path(os.getcwd()) / "quarto_tempdirs"
+    if not base_tmp_dir.exists():
+        base_tmp_dir.mkdir()
     tempdir_prefix = "qmd_temp"
     tempdir_dirname = tempdir_prefix + "_" + tempdir_suffix
-    temp_dir = Path(os.getcwd()) / tempdir_dirname
+    temp_dir = base_tmp_dir / tempdir_dirname
     if not temp_dir.exists():
         temp_dir.mkdir()
     return temp_dir
@@ -197,6 +200,7 @@ def read_tppl_file(fn, with_file=True, tempdir_suffix=""):
     df = pd.DataFrame.from_dict(
         [extract_params(s["__data__"]) for s in parsed_file["samples"]]
     )
+    df["weights"] = parsed_file["weights"]
     if with_file:
         df.to_csv(temp_fn)
 
@@ -213,25 +217,32 @@ def inference_data_from_dataframe(df, chain=0, burnin=0, subsample=1):
     return az.InferenceData(posterior=xdata)
 
 
-def create_inference_data(files, read_func, burnin, subsample=1):
-    datasets = {
-        genid: {
-            runid: inference_data_from_dataframe(
-                read_func(fn),
-                chain=hash((genid, runid)),
-                burnin=burnin,
-                subsample=subsample,
-            )
-            for runid, fn in runs.items()
-        }
-        for genid, runs in files.items()
-    }
-    return datasets
+def np_data_from_dataframe(df, chain=0, burnin=0, subsample=1):
+    index = df.index[burnin::subsample]
+    df = df.iloc[index, :]
+    df.loc[:, "chain"] = chain
+    df.loc[:, "draw"] = index
+    df = df.set_index(["chain", "draw"])
+    return df.to_numpy
+    return az.InferenceData(posterior=xdata)
 
 
 def create_inference_data_df(file_df, read_funcs, burnin, subsample=1):
     file_df["inference_data"] = [
         inference_data_from_dataframe(
+            read_funcs[row["file_type"]](row["filename"]),
+            chain=hash((row["genid"], row["compile_id"])),
+            burnin=burnin,
+            subsample=subsample,
+        )
+        for _, row in file_df.iterrows()
+    ]
+    return file_df
+
+
+def create_np_data_df(file_df, read_funcs, burnin, subsample=1):
+    file_df["inference_data"] = [
+        np_data_from_dataframe(
             read_funcs[row["file_type"]](row["filename"]),
             chain=hash((row["genid"], row["compile_id"])),
             burnin=burnin,
