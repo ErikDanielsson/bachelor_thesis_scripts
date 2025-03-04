@@ -1,0 +1,36 @@
+# This dockerfile is copied from
+# 
+#   https://github.com/miking-lang/miking-docker/blob/main/Dockerfile-miking
+# 
+# It is used as is, except that tests have been removed.
+
+ARG BASELINE_IMAGE
+FROM ${BASELINE_IMAGE}
+
+# Download the latest version of the miking repository
+ARG MIKING_GIT_REMOTE
+ARG MIKING_GIT_COMMIT
+RUN mkdir -p /src \
+ && cd /src \
+ && git clone ${MIKING_GIT_REMOTE} \
+ && cd /src/miking \
+ && git checkout ${MIKING_GIT_COMMIT} \
+ && echo "MIKING_GIT_REMOTE=\"$MIKING_GIT_REMOTE\"" >> /root/imgbuild_flags.txt \
+ && echo "MIKING_GIT_COMMIT=\"$MIKING_GIT_COMMIT\"" >> /root/imgbuild_flags.txt
+
+WORKDIR /src/miking
+
+# Apply patches if needed
+# ADD patches/ /src/patches/
+# Historic patch for javascript test case
+# RUN patch -u test/js/make.sh < /src/patches/0001-*.patch
+
+RUN eval $(opam env)   \
+ && make install       \
+ && make clean
+
+WORKDIR /root
+
+ENV MCORE_LIBS="stdlib=/root/.local/lib/mcore/stdlib"
+
+CMD ["mi"]
