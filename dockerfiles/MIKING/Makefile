@@ -24,3 +24,15 @@ treeppl_base:
 		BASELINE_IMAGE=$(baseline_image) \
 		MIKING_REVISION=$(miking_base_commit) \
 		REMOTE=$(remote)
+
+# Compile miking from the in-progress branch of Viktor Palmkvist
+elegios_in_progress_branch = in-progress
+elegios_remote = https://github.com/elegios/miking.git
+elegios_in_progress:
+	$(MAKE) build \
+		USERNAME=$(username) \
+		REPO=$(reponame) \
+		TAG=elegios-in-progress \
+		BASELINE_IMAGE=$(baseline_image) \
+		MIKING_REVISION=$(elegios_in_progress_branch) \
+		REMOTE=$(elegios_remote)

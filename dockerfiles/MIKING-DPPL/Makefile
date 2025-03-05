@@ -27,3 +27,17 @@ treeppl_base:
 		MIKING_IMAGE=$(miking_image) \
 		MIKING_DPPL_REVISION=$(miking_dppl_base_commit) \
 		REMOTE=$(remote)
+
+elegios_no_ad_updates_branch=no-ad-updates
+remote = https://github.com/elegios/miking-dppl.git
+elegios_miking_tag = elegios-in-progress
+elegios_miking_image = ${miking_repo}:$(elegios_miking_tag)
+
+treeppl_base:
+	$(MAKE) build \
+		USERNAME=$(username) \
+		REPO=$(reponame) \
+		TAG=elegios-$() \
+		MIKING_IMAGE=$(miking_image) \
+		MIKING_DPPL_REVISION=$(miking_dppl_base_commit) \
+		REMOTE=$(remote)
