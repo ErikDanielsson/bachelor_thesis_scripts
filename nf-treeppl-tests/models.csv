@@ -4,3 +4,4 @@ distributions	beta
 distributions	gaussian
 distributions	exponential
 small	coin
+driftkernel		beta

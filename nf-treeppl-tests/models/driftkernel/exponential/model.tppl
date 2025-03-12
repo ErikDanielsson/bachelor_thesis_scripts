@@ -1,0 +1,7 @@
+type ReturnValue = ReturnValue {
+    x: Real
+}
+model function uniform(b: Real): ReturnValue {
+    assume x ~ Exponential(b);
+    return ReturnValue { x = x };
+}

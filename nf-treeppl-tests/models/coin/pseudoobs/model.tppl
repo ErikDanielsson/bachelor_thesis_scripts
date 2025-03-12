@@ -2,7 +2,7 @@ type ReturnValue = ReturnValue {
   p: Real
 }
 model function coins(a: Real, b: Real, observations: Bool[]): ReturnValue {
-  assume p ~ Beta(a, b);
+  assume p ~ Beta(a, b) drift Beta(a + int2real(length(observations)) / 2.0, b + int2real(length(observations)) / 2.0);
   for i in 1 to (length(observations)) {
     observe observations[i] ~ Bernoulli(p);
   }

@@ -1,0 +1,7 @@
+type ReturnValue = ReturnValue {
+    x: Int
+}
+model function uniform(rate: Real): ReturnValue {
+    assume x ~ Poisson(rate);
+    return ReturnValue { x = x };
+}

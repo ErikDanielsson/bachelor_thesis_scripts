@@ -1,0 +1,7 @@
+type ReturnValue = ReturnValue {
+    x: Int
+}
+model function uniform(n: Int, p: Real): ReturnValue {
+    assume x ~ Binomial(n, p);
+    return ReturnValue { x = x };
+}

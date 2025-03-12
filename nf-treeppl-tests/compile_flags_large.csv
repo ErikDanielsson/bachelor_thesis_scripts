@@ -1,0 +1,9 @@
+mcmc	-m mcmc-lw-dk --align --cps none --kernel --drift 0.01 --mcmc-lw-gprob 0.0
+mcmc	-m mcmc-lw-dk --align --cps none --kernel --drift 0.1 --mcmc-lw-gprob 0.0
+mcmc	-m mcmc-lw-dk --align --cps none --kernel --drift 1.0 --mcmc-lw-gprob 0.0
+mcmc	-m mcmc-lw-dk --align --cps none --kernel --drift 10.0 --mcmc-lw-gprob 0.0
+mcmc	-m mcmc-lightweight
+mcmc	-m mcmc-trace
+mcmc	-m mcmc-naive 
+smc	-m smc-bpf
+smc	-m smc-apf

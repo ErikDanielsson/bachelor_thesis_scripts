@@ -1,0 +1,10 @@
+type ReturnValue = ReturnValue {
+  p: Real
+}
+model function coins(a: Real, b: Real, observations: Bool[]): ReturnValue {
+  assume p ~ Beta(a, b) drift Beta(a, b);
+  for i in 1 to (length(observations)) {
+    observe observations[i] ~ Bernoulli(p);
+  }
+  return ReturnValue { p = p };
+}
