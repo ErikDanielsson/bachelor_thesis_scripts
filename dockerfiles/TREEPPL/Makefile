@@ -8,7 +8,8 @@ build:
 		--tag ${USERNAME}/${REPO}:${TAG} \
 	 	--build-arg MIKING_DPPL_IMAGE=${MIKING_DPPL_IMAGE} \
 		--build-arg TREEPPL_GIT_REMOTE=${REMOTE} \
-		--build-arg TREEPPL_GIT_COMMIT=${MIKING_DPPL_REVISION} \
+		--build-arg TREEPPL_GIT_COMMIT=${TREEPPL_REVISION} \
+		--no-cache\
 		.
 	docker push $(USERNAME)/$(REPO):${TAG}
 

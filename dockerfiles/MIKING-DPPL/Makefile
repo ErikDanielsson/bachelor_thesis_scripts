@@ -9,6 +9,7 @@ build:
 	 	--build-arg MIKING_IMAGE=${MIKING_IMAGE} \
 		--build-arg MIKING_DPPL_GIT_REMOTE=${REMOTE} \
 		--build-arg MIKING_DPPL_GIT_COMMIT=${MIKING_DPPL_REVISION} \
+		--no-cache\
 		.
 	docker push $(USERNAME)/$(REPO):${TAG}
 
