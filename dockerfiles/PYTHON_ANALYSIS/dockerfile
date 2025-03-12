@@ -1,0 +1,5 @@
+FROM python:3.13
+
+RUN pip install seaborn numpy scipy matplotlib pandas
+
+CMD ["python"]

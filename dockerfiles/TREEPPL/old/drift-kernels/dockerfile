@@ -1,0 +1,56 @@
+# TreePPL with drift kernels (2025-03-03)
+# Based on debian opam image
+
+FROM ocaml/opam:debian-11-ocaml-5.4
+
+# Install general dependencies, we need to be root for this
+USER root
+RUN apt update
+RUN apt install unzip -y && \
+    apt install bubblewrap -y && \
+    apt install bzip2 -y && \
+    apt install python3-pip python3-tk -y && \
+    apt install m4 make gcc -y && \
+    apt install autoconf liblapacke-dev libopenblas-dev pkg-config -y && \
+    apt install time -y
+
+# Install opam dependencies, they are necessary for Miking's OCaml backend to work
+USER opam
+RUN opam init -y && \
+    opam update && \
+    opam switch create 5.0.0 && \
+    eval $(opam env)
+RUN opam install -y dune linenoise utop ocp-indent merlin
+RUN opam pin ocamlformat 0.24.1 && opam install -y pyml toml owl
+
+# Install Miking
+ENV MIKING_REVISION="24505bd"
+RUN eval $(opam env) && \
+    git clone https://github.com/miking-lang/miking.git && \
+    cd miking && \
+    git checkout $MIKING_REVISION && \
+    make install 
+ENV PATH="$PATH:$HOME/.local/bin"
+
+# Install CorePPL from the TreePPL fork
+ENV COREPPL_REVISION="70fabcc"
+RUN eval $(opam env) && \
+    git clone https://github.com/treeppl/miking-dppl.git && \
+    cd miking-dppl && \
+    git checkout $COREPPL_REVISION && \
+    make install 
+ENV MCORE_LIBS="coreppl=$HOME/.local/src/coreppl"
+
+# Install TreePPL
+ENV TREEPPL_REVISION="a2259e3"
+RUN eval $(opam env) && \
+    git clone https://github.com/treeppl/treeppl.git && \
+    cd treeppl && \
+    git checkout $TREEPPL_REVISION && \
+    make install 
+ENV MCORE_LIBS="$MCORE_LIBS:treeppl=$HOME/.local/src/treeppl"
+
+# We don't need the sources of Miking, CorePPL (and TreePPL?)
+RUN rm -rf miking/ miking-dppl/ treeppl/
+
+USER root

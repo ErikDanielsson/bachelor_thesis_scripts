@@ -9,6 +9,7 @@ build:
 	 	--build-arg BASELINE_IMAGE=${BASELINE_IMAGE} \
 		--build-arg MIKING_GIT_REMOTE=${REMOTE} \
 		--build-arg MIKING_GIT_COMMIT=${MIKING_REVISION} \
+		--no-cache \
 		.
 	docker push $(USERNAME)/$(REPO):${TAG}
 
@@ -26,13 +27,14 @@ treeppl_base:
 		REMOTE=$(remote)
 
 # Compile miking from the in-progress branch of Viktor Palmkvist
-elegios_in_progress_branch = in-progress
-elegios_remote = https://github.com/elegios/miking.git
-elegios_in_progress:
+custom_drift_kernel_branch=in-progress
+custom_drift_kernel_tag=custom-drift-kernels
+elegios_remote=https://github.com/elegios/miking.git
+custom_drift_kernels:
 	$(MAKE) build \
 		USERNAME=$(username) \
 		REPO=$(reponame) \
-		TAG=elegios-in-progress \
+		TAG=$(custom_drift_kernel_tag) \
 		BASELINE_IMAGE=$(baseline_image) \
-		MIKING_REVISION=$(elegios_in_progress_branch) \
+		MIKING_REVISION=$(custom_drift_kernel_branch) \
 		REMOTE=$(elegios_remote)
