@@ -1,0 +1,6 @@
+distributions	uniform
+distributions	categorical
+distributions	beta
+distributions	gaussian
+distributions	exponential
+small	coin

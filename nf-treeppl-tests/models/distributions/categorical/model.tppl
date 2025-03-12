@@ -1,0 +1,7 @@
+type ReturnValue = ReturnValue {
+    x: Int
+}
+model function uniform(params: Real[]): ReturnValue {
+    assume x ~ Categorical(params);
+    return ReturnValue { x = x };
+}

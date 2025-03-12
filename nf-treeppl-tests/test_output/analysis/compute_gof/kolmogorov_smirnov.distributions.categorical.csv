@@ -1,0 +1,4 @@
+	compile_id	runid	m	x.chi2_statistic	x.chi2_pval
+0	5	1	mcmc-naive	1.229790832866066	0.745868462600761
+1	4	1	mcmc-lightweight	4.354359509198608	0.22565481506968385
+2	3	1	mcmc-lw-dk	18316.5480058982	0.0

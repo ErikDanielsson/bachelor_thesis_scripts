@@ -1,0 +1,4 @@
+	compile_id	runid	m	p.ks_statistic	p.ks_pval
+0	15	1	mcmc-lw-dk	0.91696	0.0
+1	17	1	mcmc-naive	0.005510000000000015	0.0956889256248088
+2	16	1	mcmc-lightweight	0.0044000000000000705	0.28685827432555977

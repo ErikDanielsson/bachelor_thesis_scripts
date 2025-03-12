@@ -1,0 +1,7 @@
+type ReturnValue = ReturnValue {
+    x: Real
+}
+model function uniform(a: Real, b: Real): ReturnValue {
+    assume x ~ Beta(a, b);
+    return ReturnValue { x = x};
+}

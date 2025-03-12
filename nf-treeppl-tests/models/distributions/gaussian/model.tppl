@@ -1,0 +1,7 @@
+type ReturnValue = ReturnValue {
+    x: Real
+}
+model function uniform(mean: Real, std: Real): ReturnValue {
+    assume x ~ Gaussian(mean, std);
+    return ReturnValue { x = x };
+}
