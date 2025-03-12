@@ -17,8 +17,8 @@ def main(compile_config_fn, runs_fn, comp_path_fn, out_fn_prefix):
     tot_df = helpers.get_model_df(compile_config_fn, runs_fn)
     variables_and_types = helpers.get_output_desc(out_desc_fn)
     n_plots = len(tot_df.index) + 1
-    rows = int(np.ceil(np.sqrt(n_plots)))
-    cols = int(np.ceil(n_plots / rows))
+    rows = max(int(np.ceil(np.sqrt(n_plots))), 2)
+    cols = max(int(np.ceil(n_plots / rows)), 2)
     for variable, _ in variables_and_types.items():
         fig, axs = plt.subplots(rows, cols)
         comp_samples = helpers.get_compare_samples(comp_path_fn, variable)
