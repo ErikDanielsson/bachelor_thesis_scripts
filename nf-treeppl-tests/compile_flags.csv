@@ -1,4 +1,3 @@
-mcmc	-m mcmc-lw-dk --align --cps none --kernel --drift 1.0 --mcmc-lw-gprob 0.0
-mcmc	-m mcmc-lightweight --cps none
-mcmc	-m mcmc-naive
+mcmc	-m mcmc-lightweight --cps full --align --kernel
+mcmc	-m mcmc-lightweight --cps partial --align --kernel
 
