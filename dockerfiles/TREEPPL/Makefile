@@ -28,3 +28,18 @@ treeppl_base:
 		MIKING_DPPL_IMAGE=$(miking_dppl_image) \
 		TREEPPL_REVISION=$(treeppl_base_commit) \
 		REMOTE=$(remote)
+
+custom_drift_kernel_branch = custom-drift-kernels
+elegios_remote = https://github.com/elegios/treeppl.git
+drift_kernel_miking_dppl_tag = custom-drift-kernels
+drift_kernels_dppl_image = ${miking_dppl_repo}:${drift_kernel_miking_dppl_tag}
+
+custom_drift_kernels:
+	echo $(miking_dppl_image)
+	$(MAKE) build \
+		USERNAME=$(username) \
+		REPO=$(reponame) \
+		TAG=$(custom_drift_kernel_branch) \
+		MIKING_DPPL_IMAGE=$(drift_kernels_dppl_image) \
+		TREEPPL_REVISION=$(custom_drift_kernel_branch) \
+		REMOTE=$(elegios_remote)

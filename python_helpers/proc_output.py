@@ -90,7 +90,8 @@ def parse_compile_params(
     if parse_flags:
         flag_df = parse_sim_flags(df)
         return pd.concat([df, flag_df], axis=1).drop(columns=["flags"])
-    return df
+
+    return df.replace({np.nan: None})
 
 
 def parse_sim_flags(df, flag_col="flags"):
