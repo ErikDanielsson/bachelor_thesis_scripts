@@ -76,7 +76,7 @@ def get_files_in_dir(
 
 def parse_compile_params(
     fn,
-    header=["compile_id", "runid", "model", "flags"],
+    header=["compile_id", "runid", "model_dir", "model_name", "flags"],
     dtypes=[int, int, str, str],
     parse_flags=True,
 ):
